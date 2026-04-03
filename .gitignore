@@ -1,2 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.sqlite3
+
+# Node
+node_modules/
+.next/
+out/
+
+# Environments
+.env
+.env.local
+.env.*.local
+apps/backend/.env
+apps/frontend/.env.local
+
+# Legacy local folder from old stack
+client/
+
+# OS/Editor
+.DS_Store
+Thumbs.db
+.vscode/*.log
+
+# Legacy temp files
+.tmp_docx/
+
 start.bat
 TODO.md
