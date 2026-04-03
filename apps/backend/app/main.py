@@ -17,9 +17,15 @@ sio = create_socket_server()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    if settings.auto_create_tables:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+    # Only try to create tables if we have a valid database_url
+    # And handle errors gracefully to avoid the "Status 3" crash on Render
+    if settings.auto_create_tables and settings.database_url:
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+        except Exception as e:
+            print(f"DATABASE WARNING: Could not auto-create tables: {e}")
+            # We don't raise the error here so the app can at least start
     yield
 
 
@@ -43,7 +49,6 @@ api_app.add_middleware(
 
 @api_app.exception_handler(Exception)
 async def global_exception_handler(_request: Request, exc: Exception) -> JSONResponse:
-    """Catch-all handler so unhandled errors return JSON instead of HTML 500."""
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error"},
@@ -52,7 +57,6 @@ async def global_exception_handler(_request: Request, exc: Exception) -> JSONRes
 
 api_app.include_router(api_router, prefix=settings.api_v1_prefix)
 
-# Expose one ASGI app that serves both REST and Socket.IO.
 app = socketio.ASGIApp(
     socketio_server=sio,
     other_asgi_app=api_app,
